@@ -4,6 +4,18 @@
 
 <div class="flex flex-col items-center justify-center gap-4 h-full px-2">
     <button
+        id="clear-paste-btn"
+        type="button"
+        class="group flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-amber-600 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 active:scale-95"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+        </svg>
+        <span id="clear-paste-label">Clear & Paste</span>
+    </button>
+
+    <button
         id="convert-btn"
         type="button"
         class="group flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
@@ -23,10 +35,28 @@
     </button>
 
     <p class="text-xs text-gray-400 text-center">JSON → ENV</p>
+
+    <button
+        id="copy-env-btn"
+        type="button"
+        class="group flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-green-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500/50 active:scale-95"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
+            <path
+                d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"
+            ></path>
+        </svg>
+        <span id="copy-env-label">Copy .env</span>
+    </button>
 </div>
 
 <script>
     const convertBtn = document.getElementById("convert-btn") as HTMLButtonElement;
+    const clearPasteBtn = document.getElementById("clear-paste-btn") as HTMLButtonElement;
+    const clearPasteLabel = document.getElementById("clear-paste-label") as HTMLSpanElement;
+    const copyEnvBtn = document.getElementById("copy-env-btn") as HTMLButtonElement;
+    const copyEnvLabel = document.getElementById("copy-env-label") as HTMLSpanElement;
 
     /**
      * Flattens a nested JSON object into a flat map of uppercase,
@@ -141,4 +171,76 @@
     }
 
     convertBtn.addEventListener("click", convertJsonToEnv);
+
+    // Clear & Paste: clears the JSON textarea and pastes clipboard content
+    clearPasteBtn.addEventListener("click", async () => {
+        const jsonTextarea = document.getElementById("json-input") as HTMLTextAreaElement | null;
+        if (!jsonTextarea) return;
+
+        try {
+            const clipboardText = await navigator.clipboard.readText();
+
+            jsonTextarea.value = "";
+            jsonTextarea.value = clipboardText;
+
+            // Trigger an input event so JsonTextArea's validation/formatting kicks in
+            jsonTextarea.dispatchEvent(new Event("input", { bubbles: true }));
+
+            clearPasteLabel.textContent = "Pasted!";
+            clearPasteBtn.classList.remove("bg-amber-500", "hover:bg-amber-600");
+            clearPasteBtn.classList.add("bg-green-500", "hover:bg-green-600");
+
+            setTimeout(() => {
+                clearPasteLabel.textContent = "Clear & Paste";
+                clearPasteBtn.classList.remove("bg-green-500", "hover:bg-green-600");
+                clearPasteBtn.classList.add("bg-amber-500", "hover:bg-amber-600");
+            }, 2000);
+        } catch {
+            clearPasteLabel.textContent = "Clipboard denied";
+            clearPasteBtn.classList.remove("bg-amber-500", "hover:bg-amber-600");
+            clearPasteBtn.classList.add("bg-red-500", "hover:bg-red-600");
+
+            setTimeout(() => {
+                clearPasteLabel.textContent = "Clear & Paste";
+                clearPasteBtn.classList.remove("bg-red-500", "hover:bg-red-600");
+                clearPasteBtn.classList.add("bg-amber-500", "hover:bg-amber-600");
+            }, 2000);
+        }
+    });
+
+    // Copy .env: copies the env output textarea content to clipboard
+    copyEnvBtn.addEventListener("click", async () => {
+        const envTextarea = document.getElementById("env-output") as HTMLTextAreaElement | null;
+        if (!envTextarea) return;
+
+        const text = envTextarea.value;
+
+        if (!text) {
+            copyEnvLabel.textContent = "Nothing to copy";
+            copyEnvBtn.classList.remove("bg-green-600", "hover:bg-green-700");
+            copyEnvBtn.classList.add("bg-gray-500", "hover:bg-gray-600");
+
+            setTimeout(() => {
+                copyEnvLabel.textContent = "Copy .env";
+                copyEnvBtn.classList.remove("bg-gray-500", "hover:bg-gray-600");
+                copyEnvBtn.classList.add("bg-green-600", "hover:bg-green-700");
+            }, 2000);
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            copyEnvLabel.textContent = "Copied!";
+
+            setTimeout(() => {
+                copyEnvLabel.textContent = "Copy .env";
+            }, 2000);
+        } catch {
+            copyEnvLabel.textContent = "Failed";
+
+            setTimeout(() => {
+                copyEnvLabel.textContent = "Copy .env";
+            }, 2000);
+        }
+    });
 </script>
