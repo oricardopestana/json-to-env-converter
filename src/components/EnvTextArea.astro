@@ -1,0 +1,123 @@
+---
+
+---
+
+<div class="flex flex-col h-full w-full">
+    <label for="env-output" class="text-sm font-semibold text-gray-700 mb-2"> ENV Output </label>
+
+    <div class="relative flex-1">
+        <textarea
+            id="env-output"
+            readonly
+            placeholder="Your .env output will appear here..."
+            spellcheck="false"
+            class="w-full h-full rounded-lg border-2 border-gray-300 bg-gray-50 p-4 font-mono text-sm leading-relaxed text-gray-800 outline-none transition-colors duration-200 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none"
+        ></textarea>
+    </div>
+
+    <div class="mt-2 flex items-center justify-between min-h-6">
+        <div
+            id="env-status"
+            class="flex items-center gap-2 text-sm transition-opacity duration-200 opacity-0"
+            aria-live="polite"
+        >
+            <span id="env-status-icon"></span>
+            <span id="env-status-message"></span>
+        </div>
+
+        <button
+            id="env-copy-btn"
+            type="button"
+            class="hidden items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            aria-label="Copy to clipboard"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"
+                ></path>
+            </svg>
+            <span id="env-copy-label">Copy</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    const envTextarea = document.getElementById("env-output") as HTMLTextAreaElement;
+    const statusContainer = document.getElementById("env-status") as HTMLDivElement;
+    const statusIcon = document.getElementById("env-status-icon") as HTMLSpanElement;
+    const statusMessage = document.getElementById("env-status-message") as HTMLSpanElement;
+    const copyBtn = document.getElementById("env-copy-btn") as HTMLButtonElement;
+    const copyLabel = document.getElementById("env-copy-label") as HTMLSpanElement;
+
+    function showEnvStatus(message: string, keyCount: number) {
+        statusContainer.classList.remove("opacity-0", "text-red-600");
+        statusContainer.classList.add("opacity-100", "text-green-600");
+        statusIcon.textContent = "✓";
+        statusMessage.textContent = message;
+
+        if (keyCount > 0) {
+            copyBtn.classList.remove("hidden");
+            copyBtn.classList.add("flex");
+        }
+    }
+
+    function showEnvError(message: string) {
+        statusContainer.classList.remove("opacity-0", "text-green-600");
+        statusContainer.classList.add("opacity-100", "text-red-600");
+        statusIcon.textContent = "✗";
+        statusMessage.textContent = message;
+
+        copyBtn.classList.remove("flex");
+        copyBtn.classList.add("hidden");
+    }
+
+    function clearEnvStatus() {
+        statusContainer.classList.remove("opacity-100", "text-red-600", "text-green-600");
+        statusContainer.classList.add("opacity-0");
+        statusIcon.textContent = "";
+        statusMessage.textContent = "";
+
+        copyBtn.classList.remove("flex");
+        copyBtn.classList.add("hidden");
+    }
+
+    // Listen for conversion results from the ControlPanel
+    document.addEventListener("env-generated", ((e: CustomEvent) => {
+        const { envText, keyCount } = e.detail;
+        envTextarea.value = envText;
+
+        if (keyCount > 0) {
+            showEnvStatus(`Generated ${keyCount} variable${keyCount !== 1 ? "s" : ""}`, keyCount);
+        } else {
+            envTextarea.value = "";
+            clearEnvStatus();
+        }
+    }) as EventListener);
+
+    document.addEventListener("env-error", ((e: CustomEvent) => {
+        envTextarea.value = "";
+        showEnvError(e.detail.message);
+    }) as EventListener);
+
+    // Copy to clipboard
+    copyBtn.addEventListener("click", async () => {
+        const text = envTextarea.value;
+        if (!text) return;
+
+        try {
+            await navigator.clipboard.writeText(text);
+            copyLabel.textContent = "Copied!";
+            copyBtn.classList.add("bg-green-100", "text-green-700");
+
+            setTimeout(() => {
+                copyLabel.textContent = "Copy";
+                copyBtn.classList.remove("bg-green-100", "text-green-700");
+            }, 2000);
+        } catch {
+            copyLabel.textContent = "Failed";
+            setTimeout(() => {
+                copyLabel.textContent = "Copy";
+            }, 2000);
+        }
+    });
+</script>

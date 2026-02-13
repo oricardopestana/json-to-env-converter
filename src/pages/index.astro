@@ -1,11 +1,21 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import JsonTextArea from "../components/JsonTextArea.astro";
+import ControlPanel from "../components/ControlPanel.astro";
+import EnvTextArea from "../components/EnvTextArea.astro";
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
 ---
 
 <Layout>
-	<Welcome />
+    <div class="flex items-stretch h-screen gap-4 p-6">
+        <div class="flex-1 min-w-0 bg-white rounded-lg shadow-md p-6 flex flex-col">
+            <JsonTextArea />
+        </div>
+        <div class="shrink-0 bg-white rounded-lg shadow-md p-6 flex items-center">
+            <ControlPanel />
+        </div>
+        <div class="flex-1 min-w-0 bg-white rounded-lg shadow-md p-6 flex flex-col">
+            <EnvTextArea />
+        </div>
+    </div>
 </Layout>

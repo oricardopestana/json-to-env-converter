@@ -1,0 +1,144 @@
+---
+
+---
+
+<div class="flex flex-col items-center justify-center gap-4 h-full px-2">
+    <button
+        id="convert-btn"
+        type="button"
+        class="group flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+        Convert
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+        >
+            <path
+                fill-rule="evenodd"
+                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                clip-rule="evenodd"></path>
+        </svg>
+    </button>
+
+    <p class="text-xs text-gray-400 text-center">JSON → ENV</p>
+</div>
+
+<script>
+    const convertBtn = document.getElementById("convert-btn") as HTMLButtonElement;
+
+    /**
+     * Flattens a nested JSON object into a flat map of uppercase,
+     * underscore-separated keys suitable for .env format.
+     *
+     * Examples:
+     *   { "host": "localhost" }            → HOST=localhost
+     *   { "db": { "host": "localhost" } }  → DB_HOST=localhost
+     *   { "tags": ["a", "b"] }             → TAGS=a,b
+     *   { "count": 42 }                    → COUNT=42
+     *   { "enabled": true }                → ENABLED=true
+     */
+    function flattenToEnv(obj: Record<string, unknown>, prefix: string = ""): Map<string, string> {
+        const result = new Map<string, string>();
+
+        for (const [key, value] of Object.entries(obj)) {
+            const envKey = prefix ? `${prefix}_${key}` : key;
+            const upperKey = envKey.toUpperCase();
+
+            if (value === null || value === undefined) {
+                result.set(upperKey, "");
+            } else if (Array.isArray(value)) {
+                // Arrays: join primitives with commas, stringify complex arrays
+                const allPrimitive = value.every((item) => typeof item !== "object" || item === null);
+                if (allPrimitive) {
+                    result.set(upperKey, value.map(String).join(","));
+                } else {
+                    result.set(upperKey, JSON.stringify(value));
+                }
+            } else if (typeof value === "object") {
+                // Recurse into nested objects
+                const nested = flattenToEnv(value as Record<string, unknown>, envKey);
+                for (const [nestedKey, nestedValue] of nested) {
+                    result.set(nestedKey, nestedValue);
+                }
+            } else {
+                // Primitives: string, number, boolean
+                const strValue = String(value);
+                // Quote values that contain spaces, special chars, or are empty
+                if (strValue === "" || /[\s#=\\"]/.test(strValue)) {
+                    result.set(upperKey, `"${strValue.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
+                } else {
+                    result.set(upperKey, strValue);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    function convertJsonToEnv() {
+        const jsonTextarea = document.getElementById("json-input") as HTMLTextAreaElement | null;
+
+        if (!jsonTextarea) {
+            document.dispatchEvent(
+                new CustomEvent("env-error", {
+                    detail: { message: "JSON input not found" },
+                }),
+            );
+            return;
+        }
+
+        const raw = jsonTextarea.value.trim();
+
+        if (!raw) {
+            document.dispatchEvent(
+                new CustomEvent("env-error", {
+                    detail: { message: "JSON input is empty" },
+                }),
+            );
+            return;
+        }
+
+        try {
+            const parsed = JSON.parse(raw);
+
+            if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+                document.dispatchEvent(
+                    new CustomEvent("env-error", {
+                        detail: {
+                            message: "JSON must be an object with key-value pairs",
+                        },
+                    }),
+                );
+                return;
+            }
+
+            const envMap = flattenToEnv(parsed);
+            const lines: string[] = [];
+
+            for (const [key, value] of envMap) {
+                lines.push(`${key}=${value}`);
+            }
+
+            const envText = lines.join("\n");
+
+            document.dispatchEvent(
+                new CustomEvent("env-generated", {
+                    detail: { envText, keyCount: envMap.size },
+                }),
+            );
+        } catch (err) {
+            const errorMessage =
+                err instanceof SyntaxError ? err.message.replace(/^JSON\.parse:\s*/, "") : "Unknown parsing error";
+
+            document.dispatchEvent(
+                new CustomEvent("env-error", {
+                    detail: { message: `Invalid JSON: ${errorMessage}` },
+                }),
+            );
+        }
+    }
+
+    convertBtn.addEventListener("click", convertJsonToEnv);
+</script>
