@@ -1,60 +1,30 @@
-# Astro Starter Kit: Basics
+# JSON ↔ ENV Converter
 
-```sh
-npm create astro@latest -- --template basics
-```
+A browser-based tool to convert between JSON and environment variable formats. All processing happens client-side — no API calls, no data leaves your browser.
 
-<!-- ASTRO:REMOVE:START -->
+## Live Demo
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+**[View on GitHub](https://github.com/oricardopestana/json-to-env-converter)**
 
-<!-- ASTRO:REMOVE:END -->
+## Features
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- Convert JSON to `.env` format and vice versa
+- Flat and nested JSON support
+- Real-time validation feedback
+- Copy output with one click
+- Fully client-side — no server involved
 
-<!-- ASTRO:REMOVE:START -->
+## Commands
 
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
+| Command           | Action                                       |
+| :---------------- | :------------------------------------------- |
+| `yarn`            | Install dependencies                         |
+| `yarn dev`        | Start local dev server at `localhost:4321`   |
+| `yarn build`      | Build production site to `./dist/`           |
+| `yarn preview`    | Preview the production build locally         |
 
-<!-- ASTRO:REMOVE:END -->
+## Tech Stack
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
-```
-
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- [Astro 6 beta](https://astro.build)
+- [Tailwind CSS v4](https://tailwindcss.com)
+- TypeScript
