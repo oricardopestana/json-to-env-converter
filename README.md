@@ -4,7 +4,7 @@ A browser-based tool to convert between JSON and environment variable formats. A
 
 ## Live Demo
 
-**[View on GitHub](https://github.com/oricardopestana/json-to-env-converter)**
+**[json-to-env-converter.vercel.app](https://json-to-env-converter.vercel.app)**
 
 ## Features
 
