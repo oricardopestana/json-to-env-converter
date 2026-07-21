@@ -10,9 +10,12 @@
             id="json-input"
             placeholder="Paste JSON or env format here..."
             spellcheck="false"
-            class="w-full h-full rounded-lg border-2 p-4 font-mono text-sm leading-relaxed outline-none transition-colors duration-200 resize-none"
+            class="w-full h-full rounded-lg border-2 pt-4 pr-4 pb-4 pl-12 font-mono text-sm leading-relaxed outline-none transition-colors duration-200 resize-none overflow-x-auto whitespace-pre"
             style="background: var(--bg-input); border-color: var(--border); color: var(--text-primary); --placeholder-color: var(--placeholder);"
         ></textarea>
+        <div id="json-input-line-numbers"
+             class="absolute left-0 top-0 bottom-0 w-10 overflow-hidden select-none pointer-events-none text-right pr-2 z-10 font-mono text-sm leading-relaxed pt-4 pb-4 rounded-l-lg"
+             style="background: var(--bg-input); color: var(--text-muted); border-right: 1px solid var(--border);"></div>
     </div>
 
     <div
@@ -33,16 +36,35 @@
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px var(--focus-ring);
     }
+    textarea:focus ~ #json-input-line-numbers {
+        border-right-color: #3b82f6;
+    }
 </style>
 
 <script>
     const textarea = document.getElementById("json-input") as HTMLTextAreaElement;
+    const lineNumbers = document.getElementById("json-input-line-numbers") as HTMLDivElement;
     const statusContainer = document.getElementById("json-status") as HTMLDivElement;
     const statusIcon = document.getElementById("json-status-icon") as HTMLSpanElement;
     const statusMessage = document.getElementById("json-status-message") as HTMLSpanElement;
 
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const DEBOUNCE_DELAY = 600;
+
+    function updateLineNumbers() {
+        const lineCount = (textarea.value || "").split("\n").length;
+        let html = "";
+        for (let i = 1; i <= lineCount; i++) {
+            html += `<div>${i}</div>`;
+        }
+        lineNumbers.innerHTML = html;
+    }
+
+    textarea.addEventListener("scroll", () => {
+        lineNumbers.scrollTop = textarea.scrollTop;
+    });
+
+    updateLineNumbers();
 
     function setValid(message: string) {
         textarea.style.borderColor = "var(--valid-border)";
@@ -219,6 +241,7 @@
                 const cursorWasAtEnd = textarea.selectionStart === textarea.value.length;
 
                 textarea.value = formatted;
+                updateLineNumbers();
 
                 if (cursorWasAtEnd) {
                     textarea.selectionStart = textarea.value.length;
@@ -274,6 +297,7 @@
         textarea.value = before + pastedText + after;
         textarea.selectionStart = start + pastedText.length;
         textarea.selectionEnd = start + pastedText.length;
+        updateLineNumbers();
 
         if (debounceTimer) {
             clearTimeout(debounceTimer);
@@ -285,6 +309,7 @@
 
     // Handle typing: debounced format + validate
     textarea.addEventListener("input", () => {
+        updateLineNumbers();
         if (debounceTimer) {
             clearTimeout(debounceTimer);
         }

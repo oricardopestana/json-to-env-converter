@@ -11,9 +11,12 @@
             readonly
             placeholder="Converted output will appear here..."
             spellcheck="false"
-            class="w-full h-full rounded-lg border-2 p-4 font-mono text-sm leading-relaxed outline-none transition-colors duration-200 resize-none"
+            class="w-full h-full rounded-lg border-2 pt-4 pr-4 pb-4 pl-12 font-mono text-sm leading-relaxed outline-none transition-colors duration-200 resize-none overflow-x-auto whitespace-pre"
             style="background: var(--bg-input); border-color: var(--border); color: var(--text-primary); --placeholder-color: var(--placeholder);"
         ></textarea>
+        <div id="env-output-line-numbers"
+             class="absolute left-0 top-0 bottom-0 w-10 overflow-hidden select-none pointer-events-none text-right pr-2 z-10 font-mono text-sm leading-relaxed pt-4 pb-4 rounded-l-lg"
+             style="background: var(--bg-input); color: var(--text-muted); border-right: 1px solid var(--border);"></div>
     </div>
 
     <div class="mt-2 flex items-center justify-between min-h-6">
@@ -51,6 +54,9 @@
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px var(--focus-ring);
     }
+    textarea:focus ~ #env-output-line-numbers {
+        border-right-color: #3b82f6;
+    }
     #env-copy-btn:hover {
         background: var(--border) !important;
         color: var(--text-primary) !important;
@@ -63,11 +69,27 @@
 
 <script>
     const envTextarea = document.getElementById("env-output") as HTMLTextAreaElement;
+    const lineNumbers = document.getElementById("env-output-line-numbers") as HTMLDivElement;
     const statusContainer = document.getElementById("env-status") as HTMLDivElement;
     const statusIcon = document.getElementById("env-status-icon") as HTMLSpanElement;
     const statusMessage = document.getElementById("env-status-message") as HTMLSpanElement;
     const copyBtn = document.getElementById("env-copy-btn") as HTMLButtonElement;
     const copyLabel = document.getElementById("env-copy-label") as HTMLSpanElement;
+
+    function updateLineNumbers() {
+        const lineCount = (envTextarea.value || "").split("\n").length;
+        let html = "";
+        for (let i = 1; i <= lineCount; i++) {
+            html += `<div>${i}</div>`;
+        }
+        lineNumbers.innerHTML = html;
+    }
+
+    envTextarea.addEventListener("scroll", () => {
+        lineNumbers.scrollTop = envTextarea.scrollTop;
+    });
+
+    updateLineNumbers();
 
     function showOutputStatus(message: string, keyCount: number) {
         statusContainer.classList.remove("opacity-0");
@@ -118,10 +140,13 @@
             envTextarea.value = "";
             clearOutputStatus();
         }
+
+        updateLineNumbers();
     }) as EventListener);
 
     document.addEventListener("output-error", ((e: CustomEvent) => {
         envTextarea.value = "";
+        updateLineNumbers();
         if (e.detail.message) {
             showOutputError(e.detail.message);
         } else {
