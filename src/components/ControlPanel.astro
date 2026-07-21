@@ -2,86 +2,7 @@
 
 ---
 
-<div class="flex flex-col items-center justify-center gap-4 h-full px-2">
-    <button
-        id="clear-paste-btn"
-        type="button"
-        class="group flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-amber-600 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 active:scale-95"
-    >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
-            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
-        </svg>
-        <span id="clear-paste-label">Clear & Paste</span>
-    </button>
-
-    <button
-        id="convert-btn"
-        type="button"
-        class="group flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-        Convert
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-        >
-            <path
-                fill-rule="evenodd"
-                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                clip-rule="evenodd"></path>
-        </svg>
-    </button>
-
-    <p class="text-xs text-gray-400 text-center">JSON &rarr; ENV</p>
-
-    <button
-        id="copy-env-btn"
-        type="button"
-        class="group flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-green-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500/50 active:scale-95"
-    >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
-            <path
-                d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"
-            ></path>
-        </svg>
-        <span id="copy-env-label">Copy .env</span>
-    </button>
-
-    <div class="w-full border-t border-gray-200 my-1"></div>
-
-    <button
-        id="all-in-one-btn"
-        type="button"
-        class="group flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-violet-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50 active:scale-95"
-    >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path
-                fill-rule="evenodd"
-                d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                clip-rule="evenodd"></path>
-        </svg>
-        <span id="all-in-one-label">Paste, Convert & Copy</span>
-    </button>
-</div>
-
 <script>
-    const convertBtn = document.getElementById("convert-btn") as HTMLButtonElement;
-    const clearPasteBtn = document.getElementById("clear-paste-btn") as HTMLButtonElement;
-    const clearPasteLabel = document.getElementById("clear-paste-label") as HTMLSpanElement;
-    const copyEnvBtn = document.getElementById("copy-env-btn") as HTMLButtonElement;
-    const copyEnvLabel = document.getElementById("copy-env-label") as HTMLSpanElement;
-    const allInOneBtn = document.getElementById("all-in-one-btn") as HTMLButtonElement;
-    const allInOneLabel = document.getElementById("all-in-one-label") as HTMLSpanElement;
-
-    // ─── Shared helpers ──────────────────────────────────────────────
-
-    /**
-     * Flattens a nested JSON object into a flat map of uppercase,
-     * underscore-separated keys suitable for .env format.
-     */
     function flattenToEnv(obj: Record<string, unknown>, prefix: string = ""): Map<string, string> {
         const result = new Map<string, string>();
 
@@ -116,56 +37,79 @@
         return result;
     }
 
-    // ─── Core action functions ───────────────────────────────────────
-
-    /**
-     * Clears the JSON textarea and pastes clipboard content into it.
-     * Dispatches an input event so JsonTextArea's validation kicks in.
-     * Returns true on success, false on failure.
-     */
-    async function clearAndPaste(): Promise<boolean> {
-        const jsonTextarea = document.getElementById("json-input") as HTMLTextAreaElement | null;
-        if (!jsonTextarea) return false;
-
-        try {
-            const clipboardText = await navigator.clipboard.readText();
-            jsonTextarea.value = clipboardText;
-            jsonTextarea.dispatchEvent(new Event("input", { bubbles: true }));
-            return true;
-        } catch {
-            return false;
+    function parseEnvValue(raw: string): string {
+        const trimmed = raw.trim();
+        if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+            return trimmed
+                .slice(1, -1)
+                .replace(/\\"/g, '"')
+                .replace(/\\\\/g, "\\");
         }
+        return trimmed;
     }
 
-    /**
-     * Reads the JSON textarea, converts to .env format, and dispatches
-     * the appropriate event. Returns true if conversion succeeded.
-     */
-    function convertJsonToEnv(): boolean {
-        const jsonTextarea = document.getElementById("json-input") as HTMLTextAreaElement | null;
+    function parseEnvToJson(raw: string): Record<string, string> | null {
+        const result: Record<string, string> = {};
+        const lines = raw.split("\n");
+        let foundValidLine = false;
 
-        if (!jsonTextarea) {
-            document.dispatchEvent(new CustomEvent("env-error", { detail: { message: "JSON input not found" } }));
-            return false;
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith("#")) continue;
+
+            const eqIndex = trimmed.indexOf("=");
+            if (eqIndex === -1) return null;
+
+            const key = trimmed.slice(0, eqIndex).trim();
+            const value = trimmed.slice(eqIndex + 1);
+
+            if (!key) return null;
+
+            result[key] = parseEnvValue(value);
+            foundValidLine = true;
         }
 
-        const raw = jsonTextarea.value.trim();
+        return foundValidLine ? result : null;
+    }
 
-        if (!raw) {
-            document.dispatchEvent(new CustomEvent("env-error", { detail: { message: "JSON input is empty" } }));
-            return false;
+    function detectFormat(raw: string): "json" | "env" | null {
+        const trimmed = raw.trim();
+        if (!trimmed) return null;
+
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+                    return "json";
+                }
+            } catch {
+                // Not valid JSON, fall through
+            }
         }
 
+        const envResult = parseEnvToJson(trimmed);
+        if (envResult !== null) {
+            return "env";
+        }
+
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            try {
+                JSON.parse(trimmed);
+                return "json";
+            } catch {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    function convertJsonToEnv(raw: string): { text: string; count: number } | string {
         try {
             const parsed = JSON.parse(raw);
 
             if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-                document.dispatchEvent(
-                    new CustomEvent("env-error", {
-                        detail: { message: "JSON must be an object with key-value pairs" },
-                    }),
-                );
-                return false;
+                return "JSON must be an object with key-value pairs";
             }
 
             const envMap = flattenToEnv(parsed);
@@ -175,187 +119,74 @@
                 lines.push(`${key}=${value}`);
             }
 
-            const envText = lines.join("\n");
-
-            document.dispatchEvent(new CustomEvent("env-generated", { detail: { envText, keyCount: envMap.size } }));
-            return true;
+            return { text: lines.join("\n"), count: envMap.size };
         } catch (err) {
-            const errorMessage =
-                err instanceof SyntaxError ? err.message.replace(/^JSON\.parse:\s*/, "") : "Unknown parsing error";
-
-            document.dispatchEvent(
-                new CustomEvent("env-error", { detail: { message: `Invalid JSON: ${errorMessage}` } }),
-            );
-            return false;
+            return err instanceof SyntaxError
+                ? err.message.replace(/^JSON\.parse:\s*/, "")
+                : "Unknown parsing error";
         }
     }
 
-    /**
-     * Copies the env output textarea content to the clipboard.
-     * Returns true on success, false on failure or empty content.
-     */
-    async function copyEnvOutput(): Promise<boolean> {
-        const envTextarea = document.getElementById("env-output") as HTMLTextAreaElement | null;
-        if (!envTextarea) return false;
-
-        const text = envTextarea.value;
-        if (!text) return false;
-
-        try {
-            await navigator.clipboard.writeText(text);
-            return true;
-        } catch {
-            return false;
+    function convertEnvToJson(raw: string): { text: string; count: number } | string {
+        const parsed = parseEnvToJson(raw);
+        if (parsed === null) {
+            return "Invalid env format: each line must be KEY=VALUE";
         }
+
+        const keys = Object.keys(parsed);
+        if (keys.length === 0) {
+            return "No valid env variables found";
+        }
+
+        return { text: JSON.stringify(parsed, null, 2), count: keys.length };
     }
 
-    // ─── Button feedback helpers ─────────────────────────────────────
-
-    function flashButton(
-        btn: HTMLButtonElement,
-        label: HTMLSpanElement,
-        text: string,
-        originalText: string,
-        addClasses: string[],
-        removeClasses: string[],
-        duration: number = 2000,
-    ) {
-        label.textContent = text;
-        btn.classList.remove(...removeClasses);
-        btn.classList.add(...addClasses);
-
-        setTimeout(() => {
-            label.textContent = originalText;
-            btn.classList.remove(...addClasses);
-            btn.classList.add(...removeClasses);
-        }, duration);
+    function emitOutput(text: string, keyCount: number, format: string) {
+        document.dispatchEvent(
+            new CustomEvent("output-generated", { detail: { outputText: text, keyCount, outputFormat: format } }),
+        );
     }
 
-    // ─── Event listeners ─────────────────────────────────────────────
+    function emitError(message: string) {
+        document.dispatchEvent(new CustomEvent("output-error", { detail: { message } }));
+    }
 
-    // Clear & Paste button
-    clearPasteBtn.addEventListener("click", async () => {
-        const success = await clearAndPaste();
+    document.addEventListener("input-validated", ((e: CustomEvent) => {
+        const { format, raw } = e.detail;
+        const inputEl = document.getElementById("json-input") as HTMLTextAreaElement | null;
 
-        if (success) {
-            flashButton(
-                clearPasteBtn,
-                clearPasteLabel,
-                "Pasted!",
-                "Clear & Paste",
-                ["bg-green-500", "hover:bg-green-600"],
-                ["bg-amber-500", "hover:bg-amber-600"],
-            );
-        } else {
-            flashButton(
-                clearPasteBtn,
-                clearPasteLabel,
-                "Clipboard denied",
-                "Clear & Paste",
-                ["bg-red-500", "hover:bg-red-600"],
-                ["bg-amber-500", "hover:bg-amber-600"],
-            );
-        }
-    });
-
-    // Convert button
-    convertBtn.addEventListener("click", () => {
-        convertJsonToEnv();
-    });
-
-    // Copy .env button
-    copyEnvBtn.addEventListener("click", async () => {
-        const envTextarea = document.getElementById("env-output") as HTMLTextAreaElement | null;
-        const text = envTextarea?.value ?? "";
-
-        if (!text) {
-            flashButton(
-                copyEnvBtn,
-                copyEnvLabel,
-                "Nothing to copy",
-                "Copy .env",
-                ["bg-gray-500", "hover:bg-gray-600"],
-                ["bg-green-600", "hover:bg-green-700"],
-            );
+        if (!inputEl) {
+            emitError("Input not found");
             return;
         }
 
-        const success = await copyEnvOutput();
+        const inputRaw = raw ?? inputEl.value.trim();
 
-        if (success) {
-            flashButton(
-                copyEnvBtn,
-                copyEnvLabel,
-                "Copied!",
-                "Copy .env",
-                ["bg-green-600", "hover:bg-green-700"],
-                ["bg-green-600", "hover:bg-green-700"],
-            );
-        } else {
-            flashButton(
-                copyEnvBtn,
-                copyEnvLabel,
-                "Failed",
-                "Copy .env",
-                ["bg-red-500", "hover:bg-red-600"],
-                ["bg-green-600", "hover:bg-green-700"],
-            );
-        }
-    });
-
-    // All-in-one: Paste, Convert & Copy
-    allInOneBtn.addEventListener("click", async () => {
-        // Step 1: Clear & Paste
-        const pasted = await clearAndPaste();
-
-        if (!pasted) {
-            flashButton(
-                allInOneBtn,
-                allInOneLabel,
-                "Clipboard denied",
-                "Paste, Convert & Copy",
-                ["bg-red-500", "hover:bg-red-600"],
-                ["bg-violet-600", "hover:bg-violet-700"],
-            );
+        if (!inputRaw) {
+            emitError("");
             return;
         }
 
-        // Step 2: Convert
-        const converted = convertJsonToEnv();
-
-        if (!converted) {
-            flashButton(
-                allInOneBtn,
-                allInOneLabel,
-                "Conversion failed",
-                "Paste, Convert & Copy",
-                ["bg-red-500", "hover:bg-red-600"],
-                ["bg-violet-600", "hover:bg-violet-700"],
-            );
-            return;
-        }
-
-        // Step 3: Copy .env
-        const copied = await copyEnvOutput();
-
-        if (copied) {
-            flashButton(
-                allInOneBtn,
-                allInOneLabel,
-                "Done! .env copied",
-                "Paste, Convert & Copy",
-                ["bg-green-500", "hover:bg-green-600"],
-                ["bg-violet-600", "hover:bg-violet-700"],
-            );
+        if (format === "json") {
+            const result = convertJsonToEnv(inputRaw);
+            if (typeof result === "string") {
+                emitError(result);
+            } else {
+                emitOutput(result.text, result.count, "env");
+            }
+        } else if (format === "env") {
+            const result = convertEnvToJson(inputRaw);
+            if (typeof result === "string") {
+                emitError(result);
+            } else {
+                emitOutput(result.text, result.count, "json");
+            }
         } else {
-            flashButton(
-                allInOneBtn,
-                allInOneLabel,
-                "Copy failed",
-                "Paste, Convert & Copy",
-                ["bg-red-500", "hover:bg-red-600"],
-                ["bg-violet-600", "hover:bg-violet-700"],
-            );
+            emitError("");
         }
+    }) as EventListener);
+
+    document.addEventListener("input-invalid", () => {
+        emitError("");
     });
 </script>

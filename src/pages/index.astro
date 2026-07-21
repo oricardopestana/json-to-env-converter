@@ -1,21 +1,26 @@
 ---
-import JsonTextArea from "../components/JsonTextArea.astro";
+import InputTextArea from "../components/InputTextArea.astro";
 import ControlPanel from "../components/ControlPanel.astro";
-import EnvTextArea from "../components/EnvTextArea.astro";
+import OutputTextArea from "../components/OutputTextArea.astro";
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 ---
 
 <Layout>
-    <div class="flex items-stretch h-screen gap-4 p-6">
+    <div class="flex flex-col h-screen">
+        <header class="px-6 pt-6 pb-2 text-center">
+            <h1 class="text-2xl font-bold text-gray-800">JSON ↔ ENV Converter</h1>
+            <p class="mt-1 text-sm text-gray-500">Paste JSON or ENV format to convert between the two</p>
+        </header>
+
+        <div class="flex items-stretch flex-1 gap-4 px-6 pb-6">
         <div class="flex-1 min-w-0 bg-white rounded-lg shadow-md p-6 flex flex-col">
-            <JsonTextArea />
+            <InputTextArea />
         </div>
-        <div class="shrink-0 bg-white rounded-lg shadow-md p-6 flex items-center">
-            <ControlPanel />
-        </div>
+        <ControlPanel />
         <div class="flex-1 min-w-0 bg-white rounded-lg shadow-md p-6 flex flex-col">
-            <EnvTextArea />
+            <OutputTextArea />
         </div>
+    </div>
     </div>
 </Layout>

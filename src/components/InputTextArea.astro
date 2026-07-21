@@ -1,0 +1,231 @@
+---
+
+---
+
+<div class="flex flex-col h-full w-full">
+    <label for="json-input" class="text-sm font-semibold text-gray-700 mb-2"> Input </label>
+
+    <div class="relative flex-1">
+        <textarea
+            id="json-input"
+            placeholder="Paste JSON or env format here..."
+            spellcheck="false"
+            class="w-full h-full rounded-lg border-2 border-gray-300 bg-gray-50 p-4 font-mono text-sm leading-relaxed text-gray-800 outline-none transition-colors duration-200 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none"
+        ></textarea>
+    </div>
+
+    <div
+        id="json-status"
+        class="mt-2 flex items-center gap-2 text-sm min-h-6 transition-opacity duration-200 opacity-0"
+        aria-live="polite"
+    >
+        <span id="json-status-icon"></span>
+        <span id="json-status-message"></span>
+    </div>
+</div>
+
+<script>
+    const textarea = document.getElementById("json-input") as HTMLTextAreaElement;
+    const statusContainer = document.getElementById("json-status") as HTMLDivElement;
+    const statusIcon = document.getElementById("json-status-icon") as HTMLSpanElement;
+    const statusMessage = document.getElementById("json-status-message") as HTMLSpanElement;
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const DEBOUNCE_DELAY = 600;
+
+    function setValid(message: string) {
+        textarea.classList.remove("border-red-500", "focus:border-red-500", "focus:ring-red-500/20");
+        textarea.classList.add("border-green-500", "focus:border-green-500", "focus:ring-green-500/20");
+
+        statusContainer.classList.remove("opacity-0", "text-red-600");
+        statusContainer.classList.add("opacity-100", "text-green-600");
+        statusIcon.textContent = "✓";
+        statusMessage.textContent = message;
+    }
+
+    function setInvalid(message: string) {
+        textarea.classList.remove("border-green-500", "focus:border-green-500", "focus:ring-green-500/20");
+        textarea.classList.add("border-red-500", "focus:border-red-500", "focus:ring-red-500/20");
+
+        statusContainer.classList.remove("opacity-0", "text-green-600");
+        statusContainer.classList.add("opacity-100", "text-red-600");
+        statusIcon.textContent = "✗";
+        statusMessage.textContent = message;
+    }
+
+    function clearStatus() {
+        textarea.classList.remove(
+            "border-red-500",
+            "focus:border-red-500",
+            "focus:ring-red-500/20",
+            "border-green-500",
+            "focus:border-green-500",
+            "focus:ring-green-500/20",
+        );
+
+        statusContainer.classList.remove("opacity-100", "text-red-600", "text-green-600");
+        statusContainer.classList.add("opacity-0");
+        statusIcon.textContent = "";
+        statusMessage.textContent = "";
+    }
+
+    function parseEnvValue(raw: string): string {
+        const trimmed = raw.trim();
+        if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+            return trimmed
+                .slice(1, -1)
+                .replace(/\\"/g, '"')
+                .replace(/\\\\/g, "\\");
+        }
+        return trimmed;
+    }
+
+    function parseEnvLine(line: string): { key: string; value: string } | null {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) return null;
+
+        const eqIndex = trimmed.indexOf("=");
+        if (eqIndex === -1) return null;
+
+        const key = trimmed.slice(0, eqIndex).trim();
+        const value = trimmed.slice(eqIndex + 1);
+
+        if (!key) return null;
+
+        return { key, value: parseEnvValue(value) };
+    }
+
+    function isEnvFormat(raw: string): boolean {
+        const lines = raw.split("\n");
+        let foundValidLine = false;
+
+        for (const line of lines) {
+            const result = parseEnvLine(line);
+            if (result !== null) {
+                foundValidLine = true;
+            } else {
+                const trimmed = line.trim();
+                if (trimmed && !trimmed.startsWith("#")) {
+                    return false;
+                }
+            }
+        }
+
+        return foundValidLine;
+    }
+
+    function formatAndValidate(source: "paste" | "input") {
+        const raw = textarea.value.trim();
+
+        if (!raw) {
+            clearStatus();
+            textarea.dispatchEvent(new CustomEvent("input-invalid", { bubbles: true }));
+            return;
+        }
+
+        const startsWithBrace = raw.startsWith("{") || raw.startsWith("[");
+
+        if (startsWithBrace) {
+            try {
+                const parsed = JSON.parse(raw);
+
+                if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+                    setInvalid("JSON must be an object (key-value pairs), not an array or primitive.");
+                    textarea.dispatchEvent(new CustomEvent("input-invalid", { bubbles: true }));
+                    return;
+                }
+
+                const formatted = JSON.stringify(parsed, null, 2);
+                const cursorWasAtEnd = textarea.selectionStart === textarea.value.length;
+
+                textarea.value = formatted;
+
+                if (cursorWasAtEnd) {
+                    textarea.selectionStart = textarea.value.length;
+                    textarea.selectionEnd = textarea.value.length;
+                }
+
+                const keyCount = Object.keys(parsed).length;
+                setValid(`Detected JSON — ${keyCount} key${keyCount !== 1 ? "s" : ""}`);
+
+                textarea.dispatchEvent(
+                    new CustomEvent("input-validated", {
+                        bubbles: true,
+                        detail: { format: "json", raw: formatted },
+                    }),
+                );
+            } catch (err) {
+                const errorMessage =
+                    err instanceof SyntaxError
+                        ? err.message.replace(/^JSON\.parse:\s*/, "")
+                        : "Unknown parsing error";
+
+                setInvalid(`Invalid JSON: ${errorMessage}`);
+                textarea.dispatchEvent(new CustomEvent("input-invalid", { bubbles: true }));
+            }
+        } else if (isEnvFormat(raw)) {
+            const lines = raw.split("\n").filter((line) => {
+                const trimmed = line.trim();
+                return trimmed && !trimmed.startsWith("#");
+            });
+
+            setValid(`Detected env format — ${lines.length} variable${lines.length !== 1 ? "s" : ""}`);
+
+            textarea.dispatchEvent(
+                new CustomEvent("input-validated", {
+                    bubbles: true,
+                    detail: { format: "env", raw },
+                }),
+            );
+        } else {
+            setInvalid("Could not detect format. Expected JSON object or KEY=VALUE lines.");
+            textarea.dispatchEvent(new CustomEvent("input-invalid", { bubbles: true }));
+        }
+    }
+
+    // Handle paste: intercept and format immediately
+    textarea.addEventListener("paste", (e: ClipboardEvent) => {
+        e.preventDefault();
+
+        const pastedText = e.clipboardData?.getData("text/plain") ?? "";
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const before = textarea.value.slice(0, start);
+        const after = textarea.value.slice(end);
+
+        textarea.value = before + pastedText + after;
+        textarea.selectionStart = start + pastedText.length;
+        textarea.selectionEnd = start + pastedText.length;
+
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+        }
+
+        formatAndValidate("paste");
+    });
+
+    // Handle typing: debounced format + validate
+    textarea.addEventListener("input", () => {
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+
+        debounceTimer = setTimeout(() => {
+            formatAndValidate("input");
+        }, DEBOUNCE_DELAY);
+    });
+
+    // Also validate on blur for good measure
+    textarea.addEventListener("blur", () => {
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+        }
+
+        if (textarea.value.trim()) {
+            formatAndValidate("input");
+        }
+    });
+</script>
