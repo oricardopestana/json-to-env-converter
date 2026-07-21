@@ -114,6 +114,75 @@
         return foundValidLine;
     }
 
+    function positionToLineCol(raw: string, position: number): { line: number; col: number } {
+        let line = 1;
+        let col = 1;
+        for (let i = 0; i < position && i < raw.length; i++) {
+            if (raw[i] === "\n") {
+                line++;
+                col = 1;
+            } else {
+                col++;
+            }
+        }
+        return { line, col };
+    }
+
+    function extractJsonError(err: unknown, raw: string): { message: string; position: number | null } {
+        if (!(err instanceof SyntaxError)) {
+            return { message: "Unknown parsing error", position: null };
+        }
+
+        let position: number | null = null;
+        const posMatch = err.message.match(/at position (\d+)/);
+        if (posMatch) {
+            position = parseInt(posMatch[1], 10);
+        }
+
+        if (position === null) {
+            const chars = ["{", "}", "[", "]", ","];
+            for (let i = 0; i < raw.length; i++) {
+                if (chars.includes(raw[i])) {
+                    let depth = 0;
+                    let lastNonWS = "";
+                    for (let j = 0; j < i; j++) {
+                        const c = raw[j];
+                        if (c === "{" || c === "[") depth++;
+                        else if (c === "}" || c === "]") depth--;
+                        if (c.trim()) lastNonWS = c;
+                    }
+                    if (depth < 0 || (raw[i] !== "," && (lastNonWS === "," || lastNonWS === "{" || lastNonWS === "[" || lastNonWS === ":"))) {
+                        position = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (position === null) {
+            return { message: err.message.replace(/^JSON\.parse:\s*/, ""), position: null };
+        }
+
+        const { line, col } = positionToLineCol(raw, position);
+        let cleanMessage = err.message.replace(/^JSON\.parse:\s*/, "");
+        cleanMessage = cleanMessage.replace(/\s*at position \d+(\s*\(.*\))?\s*$/, "");
+        cleanMessage = cleanMessage.replace(/, "["\d[\s\S]*?"\s*is not valid JSON$/, "");
+
+        return {
+            message: `line ${line}, col ${col}: ${cleanMessage}`,
+            position,
+        };
+    }
+
+    function highlightErrorPosition(position: number | null) {
+        if (position === null || position < 0 || position >= textarea.value.length) return;
+
+        textarea.setSelectionRange(position, position + 1);
+        const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 20;
+        textarea.scrollTop = Math.max(0, (positionToLineCol(textarea.value, position).line - 3) * lineHeight);
+        textarea.focus();
+    }
+
     function formatAndValidate(source: "paste" | "input") {
         const raw = textarea.value.trim();
 
@@ -155,12 +224,9 @@
                     }),
                 );
             } catch (err) {
-                const errorMessage =
-                    err instanceof SyntaxError
-                        ? err.message.replace(/^JSON\.parse:\s*/, "")
-                        : "Unknown parsing error";
-
-                setInvalid(`Invalid JSON: ${errorMessage}`);
+                const { message, position } = extractJsonError(err, raw);
+                setInvalid(`Invalid JSON — ${message}`);
+                highlightErrorPosition(position);
                 textarea.dispatchEvent(new CustomEvent("input-invalid", { bubbles: true }));
             }
         } else if (isEnvFormat(raw)) {
