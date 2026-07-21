@@ -3,7 +3,7 @@
 ---
 
 <div class="flex flex-col h-full w-full">
-    <label for="env-output" class="text-sm font-semibold text-gray-700 mb-2"> Output </label>
+    <label for="env-output" class="text-sm font-semibold mb-2" style="color: var(--text-secondary);"> Output </label>
 
     <div class="relative flex-1">
         <textarea
@@ -11,7 +11,8 @@
             readonly
             placeholder="Converted output will appear here..."
             spellcheck="false"
-            class="w-full h-full rounded-lg border-2 border-gray-300 bg-gray-50 p-4 font-mono text-sm leading-relaxed text-gray-800 outline-none transition-colors duration-200 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none"
+            class="w-full h-full rounded-lg border-2 p-4 font-mono text-sm leading-relaxed outline-none transition-colors duration-200 resize-none"
+            style="background: var(--bg-input); border-color: var(--border); color: var(--text-primary); --placeholder-color: var(--placeholder);"
         ></textarea>
     </div>
 
@@ -28,7 +29,8 @@
         <button
             id="env-copy-btn"
             type="button"
-            class="hidden items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            class="hidden items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150 focus:outline-none focus:ring-2"
+            style="background: var(--bg-input); color: var(--text-primary); --focus-ring: var(--focus-ring);"
             aria-label="Copy to clipboard"
         >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
@@ -41,6 +43,24 @@
     </div>
 </div>
 
+<style>
+    textarea::placeholder {
+        color: var(--placeholder-color);
+    }
+    textarea:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+    #env-copy-btn:hover {
+        background: var(--border) !important;
+        color: var(--text-primary) !important;
+        opacity: 0.9;
+    }
+    #env-copy-btn:focus {
+        box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+</style>
+
 <script>
     const envTextarea = document.getElementById("env-output") as HTMLTextAreaElement;
     const statusContainer = document.getElementById("env-status") as HTMLDivElement;
@@ -50,10 +70,12 @@
     const copyLabel = document.getElementById("env-copy-label") as HTMLSpanElement;
 
     function showOutputStatus(message: string, keyCount: number) {
-        statusContainer.classList.remove("opacity-0", "text-red-600");
-        statusContainer.classList.add("opacity-100", "text-green-600");
+        statusContainer.classList.remove("opacity-0");
+        statusContainer.classList.add("opacity-100");
         statusIcon.textContent = "✓";
+        statusIcon.style.color = "var(--valid-text)";
         statusMessage.textContent = message;
+        statusMessage.style.color = "var(--valid-text)";
 
         if (keyCount > 0) {
             copyBtn.classList.remove("hidden");
@@ -62,20 +84,24 @@
     }
 
     function showOutputError(message: string) {
-        statusContainer.classList.remove("opacity-0", "text-green-600");
-        statusContainer.classList.add("opacity-100", "text-red-600");
+        statusContainer.classList.remove("opacity-0");
+        statusContainer.classList.add("opacity-100");
         statusIcon.textContent = "✗";
+        statusIcon.style.color = "var(--invalid-text)";
         statusMessage.textContent = message;
+        statusMessage.style.color = "var(--invalid-text)";
 
         copyBtn.classList.remove("flex");
         copyBtn.classList.add("hidden");
     }
 
     function clearOutputStatus() {
-        statusContainer.classList.remove("opacity-100", "text-red-600", "text-green-600");
+        statusContainer.classList.remove("opacity-100");
         statusContainer.classList.add("opacity-0");
         statusIcon.textContent = "";
+        statusIcon.style.color = "";
         statusMessage.textContent = "";
+        statusMessage.style.color = "";
 
         copyBtn.classList.remove("flex");
         copyBtn.classList.add("hidden");
@@ -111,11 +137,13 @@
         try {
             await navigator.clipboard.writeText(text);
             copyLabel.textContent = "Copied!";
-            copyBtn.classList.add("bg-green-100", "text-green-700");
+            copyBtn.style.background = "var(--valid-bg)";
+            copyBtn.style.color = "var(--valid-text)";
 
             setTimeout(() => {
                 copyLabel.textContent = "Copy";
-                copyBtn.classList.remove("bg-green-100", "text-green-700");
+                copyBtn.style.background = "";
+                copyBtn.style.color = "";
             }, 2000);
         } catch {
             copyLabel.textContent = "Failed";
